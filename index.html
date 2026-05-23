@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hacer Sultan'ın Mandırası</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Georgia, serif; background: #f0f4f0; min-height: 100vh; padding-bottom: 80px; }
+
+/* BAŞLIK */
+.baslik {
+  background: linear-gradient(135deg, #1a3c2e 0%, #2d6a4f 60%, #40916c 100%);
+  padding: 28px 24px 20px; text-align: center;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+}
+.baslik .emoji { font-size: 40px; margin-bottom: 6px; }
+.baslik h1 { color: #fff; font-size: 20px; font-weight: bold; letter-spacing: 3px; text-transform: uppercase; text-shadow: 0 2px 8px rgba(0,0,0,0.25); }
+.cizgi { width: 60px; height: 2px; background: #95d5b2; margin: 8px auto; border-radius: 2px; }
+.baslik p { color: #95d5b2; font-size: 12px; letter-spacing: 1px; }
+
+/* ALT NAVİGASYON */
+.nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: #1a3c2e; display: flex; z-index: 100;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.2);
+}
+.nav-btn {
+  flex: 1; padding: 12px 4px 10px; border: none; background: transparent;
+  color: #95d5b2; font-size: 11px; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  font-family: Georgia, serif; transition: background 0.2s;
+}
+.nav-btn .nav-emoji { font-size: 22px; }
+.nav-btn.aktif { background: #2d6a4f; color: #fff; }
+
+/* SAYFA */
+.sayfa { display: none; max-width: 480px; margin: 0 auto; padding: 16px 16px 0; }
+.sayfa.aktif { display: block; }
+
+/* BİLDİRİM */
+.bildirim {
+  position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+  z-index: 999; color: #fff; padding: 10px 24px; border-radius: 8px;
+  font-size: 14px; box-shadow: 0 4px 16px rgba(0,0,0,0.22);
+  white-space: nowrap; display: none; font-family: Georgia, serif;
+}
+
+/* KART */
+.kart {
+  background: #fff; border-radius: 16px; padding: 20px;
+  margin-bottom: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  border: 2px solid transparent;
+}
+.kart.duzenle-modu { border-color: #2d6a4f; }
+.kart h2 { font-size: 15px; color: #1a3c2e; margin-bottom: 16px; font-weight: bold; }
+
+label {
+  display: block; font-size: 11px; font-weight: bold; color: #555;
+  margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px;
+}
+label.alt { margin-top: 12px; }
+.input-wrap { position: relative; }
+.input-wrap span { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: #888; font-size: 13px; }
+
+input[type=date], input[type=number] {
+  width: 100%; padding: 10px 14px; border: 1.5px solid #d0e8d8;
+  border-radius: 10px; font-size: 16px; color: #1a3c2e;
+  background: #f8fdf9; outline: none; font-family: Georgia, serif;
+}
+input[type=number] { padding-right: 44px; }
+
+.onizleme {
+  margin-top: 8px; padding: 8px 12px; background: #d8f3dc;
+  border-radius: 8px; font-size: 13px; color: #1a3c2e; display: none;
+}
+
+.btn-grup { display: flex; gap: 10px; margin-top: 14px; }
+.btn { flex: 1; padding: 12px; border: none; border-radius: 10px; font-size: 15px; font-weight: bold; cursor: pointer; font-family: Georgia, serif; }
+.btn-yesil { background: #2d6a4f; color: #fff; }
+.btn-sari { background: #d4a017; color: #fff; }
+.btn-turuncu { background: #c0621a; color: #fff; }
+.btn-gri { background: #eee; color: #333; }
+.btn-kirmizi { background: #c0392b; color: #fff; }
+
+/* ÖZET KUTULAR */
+.ozet { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.ozet-kutu { border-radius: 14px; padding: 16px; color: #fff; text-align: center; }
+.ozet-kutu .etiket { font-size: 10px; opacity: 0.75; margin-bottom: 3px; }
+.ozet-kutu .sayi { font-size: 26px; font-weight: bold; }
+.ozet-kutu .birim { font-size: 11px; opacity: 0.75; }
+
+/* LİSTE */
+.liste-baslik { font-size: 14px; color: #1a3c2e; font-weight: bold; margin-bottom: 10px; }
+.bos-mesaj { text-align: center; color: #aaa; padding: 30px 0; font-size: 14px; }
+.kayit-satir {
+  background: #fff; border-radius: 12px; padding: 12px 14px;
+  margin-bottom: 8px; box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+  display: flex; align-items: center; justify-content: space-between;
+  border: 2px solid transparent;
+}
+.kayit-satir.aktif { border-color: #40916c; }
+.kayit-tarih { font-size: 12px; color: #555; margin-bottom: 2px; }
+.kayit-ana { font-size: 17px; font-weight: bold; color: #1a3c2e; }
+.kayit-alt { font-size: 12px; color: #40916c; margin-top: 1px; }
+.ikon-grup { display: flex; gap: 6px; }
+.ikon-btn { border: none; border-radius: 8px; padding: 7px 9px; cursor: pointer; font-size: 15px; }
+
+/* GRAFİK */
+.grafik-sekme-grup { display: flex; gap: 8px; margin-bottom: 16px; }
+.grafik-sekme {
+  flex: 1; padding: 10px 4px; border: none; border-radius: 10px;
+  font-size: 12px; font-weight: bold; cursor: pointer;
+  font-family: Georgia, serif; background: #e8f5e9; color: #2d6a4f;
+}
+.grafik-sekme.aktif { background: #2d6a4f; color: #fff; }
+.grafik-kap { background: #fff; border-radius: 16px; padding: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); margin-bottom: 16px; }
+.grafik-kap h3 { font-size: 14px; color: #1a3c2e; margin-bottom: 12px; text-align: center; }
+
+/* MODAL */
+.modal-arkaplan { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 24px; }
+.modal-arkaplan.acik { display: flex; }
+.modal { background: #fff; border-radius: 16px; padding: 24px 20px; max-width: 320px; width: 100%; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
+.modal .modal-emoji { font-size: 34px; margin-bottom: 10px; }
+.modal p { margin: 0 0 18px; color: #333; font-size: 15px; }
+</style>
+</head>
+<body>
+
+<div class="baslik">
+  <div class="emoji">🥛</div>
+  <h1>Hacer Sultan'ın Mandırası</h1>
+  <div class="cizgi"></div>
+  <p>Süt · Peynir · Tereyağı</p>
+</div>
+
+<div id="bildirim" class="bildirim"></div>
+
+<!-- ===== SÜT SAYFASI ===== -->
+<div class="sayfa aktif" id="sayfa-sut">
+  <div class="kart" id="sut-form-kart">
+    <h2 id="sut-form-baslik">➕ Yeni Süt Kaydı</h2>
+    <label>Tarih</label>
+    <input type="date" id="sut-tarih" />
+    <label class="alt">Litre Miktarı</label>
+    <div class="input-wrap">
+      <input type="number" id="sut-litre" min="0" step="0.5" placeholder="örn. 40" />
+      <span>lt</span>
+    </div>
+    <div class="onizleme" id="sut-onizleme"></div>
+    <div class="btn-grup">
+      <button class="btn btn-yesil" id="sut-kaydet-btn" onclick="sutKaydet()">Kaydet</button>
+      <button class="btn btn-gri" id="sut-iptal-btn" onclick="sutIptal()" style="display:none">İptal</button>
+    </div>
+  </div>
+  <div class="ozet">
+    <div class="ozet-kutu" style="background:#1a3c2e">
+      <div class="etiket">TOPLAM LİTRE</div>
+      <div class="sayi" id="sut-toplam-litre">0</div>
+      <div class="birim">litre</div>
+    </div>
+    <div class="ozet-kutu" style="background:#40916c">
+      <div class="etiket">TOPLAM TUTAR</div>
+      <div class="sayi" id="sut-toplam-tutar">0</div>
+      <div class="birim">₺</div>
+    </div>
+  </div>
+  <div class="liste-baslik" id="sut-liste-baslik">📋 Kayıtlar (0)</div>
+  <div id="sut-liste"></div>
+</div>
+
+<!-- ===== PEYNİR SAYFASI ===== -->
+<div class="sayfa" id="sayfa-peynir">
+  <div class="kart" id="peynir-form-kart">
+    <h2 id="peynir-form-baslik">➕ Yeni Peynir Kaydı</h2>
+    <label>Tarih</label>
+    <input type="date" id="peynir-tarih" />
+    <label class="alt">Kullanılan Süt</label>
+    <div class="input-wrap">
+      <input type="number" id="peynir-sut" min="0" step="0.5" placeholder="örn. 100" />
+      <span>lt</span>
+    </div>
+    <label class="alt">Elde Edilen Peynir</label>
+    <div class="input-wrap">
+      <input type="number" id="peynir-kg" min="0" step="0.1" placeholder="örn. 12" />
+      <span>kg</span>
+    </div>
+    <div class="btn-grup">
+      <button class="btn btn-sari" id="peynir-kaydet-btn" onclick="peynirKaydet()">Kaydet</button>
+      <button class="btn btn-gri" id="peynir-iptal-btn" onclick="peynirIptal()" style="display:none">İptal</button>
+    </div>
+  </div>
+  <div class="ozet">
+    <div class="ozet-kutu" style="background:#d4a017">
+      <div class="etiket">TOPLAM PEYNİR</div>
+      <div class="sayi" id="peynir-toplam-kg">0</div>
+      <div class="birim">kg</div>
+    </div>
+    <div class="ozet-kutu" style="background:#b8860b">
+      <div class="etiket">KULLANILAN SÜT</div>
+      <div class="sayi" id="peynir-toplam-sut">0</div>
+      <div class="birim">litre</div>
+    </div>
+  </div>
+  <div class="liste-baslik" id="peynir-liste-baslik">📋 Kayıtlar (0)</div>
+  <div id="peynir-liste"></div>
+</div>
+
+<!-- ===== TEREYAĞI SAYFASI ===== -->
+<div class="sayfa" id="sayfa-tereyag">
+  <div class="kart" id="tereyag-form-kart">
+    <h2 id="tereyag-form-baslik">➕ Yeni Tereyağı Kaydı</h2>
+    <label>Tarih</label>
+    <input type="date" id="tereyag-tarih" />
+    <label class="alt">Kullanılan Krema</label>
+    <div class="input-wrap">
+      <input type="number" id="tereyag-krema" min="0" step="0.1" placeholder="örn. 20" />
+      <span>lt</span>
+    </div>
+    <label class="alt">Elde Edilen Tereyağı</label>
+    <div class="input-wrap">
+      <input type="number" id="tereyag-kg" min="0" step="0.1" placeholder="örn. 8" />
+      <span>kg</span>
+    </div>
+    <div class="btn-grup">
+      <button class="btn btn-turuncu" id="tereyag-kaydet-btn" onclick="tereyagKaydet()">Kaydet</button>
+      <button class="btn btn-gri" id="tereyag-iptal-btn" onclick="tereyagIptal()" style="display:none">İptal</button>
+    </div>
+  </div>
+  <div class="ozet">
+    <div class="ozet-kutu" style="background:#c0621a">
+      <div class="etiket">TOPLAM TEREYAĞI</div>
+      <div class="sayi" id="tereyag-toplam-kg">0</div>
+      <div class="birim">kg</div>
+    </div>
+    <div class="ozet-kutu" style="background:#a0521a">
+      <div class="etiket">KULLANILAN KREMA</div>
+      <div class="sayi" id="tereyag-toplam-krema">0</div>
+      <div class="birim">litre</div>
+    </div>
+  </div>
+  <div class="liste-baslik" id="tereyag-liste-baslik">📋 Kayıtlar (0)</div>
+  <div id="tereyag-liste"></div>
+</div>
+
+<!-- ===== GRAFİK SAYFASI ===== -->
+<div class="sayfa" id="sayfa-grafik">
+  <div class="grafik-sekme-grup">
+    <button class="grafik-sekme aktif" onclick="grafik('sut')">🥛 Süt</button>
+    <button class="grafik-sekme" onclick="grafik('peynir')">🧀 Peynir</button>
+    <button class="grafik-sekme" onclick="grafik('tereyag')">🧈 Tereyağı</button>
+  </div>
+  <div class="grafik-kap">
+    <h3 id="grafik-baslik">Aylık Süt Alımı (Litre)</h3>
+    <canvas id="ana-grafik" height="220"></canvas>
+  </div>
+  <div class="grafik-kap">
+    <h3>Genel Özet</h3>
+    <canvas id="ozet-grafik" height="200"></canvas>
+  </div>
+</div>
+
+<!-- Silme Modalı -->
+<div class="modal-arkaplan" id="sil-modal">
+  <div class="modal">
+    <div class="modal-emoji">⚠️</div>
+    <p>Bu kaydı silmek istediğinize emin misiniz?</p>
+    <div class="btn-grup">
+      <button class="btn btn-kirmizi" onclick="silOnayla()">Evet, Sil</button>
+      <button class="btn btn-gri" onclick="silIptal()">İptal</button>
+    </div>
+  </div>
+</div>
+
+<!-- ALT NAV -->
+<div class="nav">
+  <button class="nav-btn aktif" id="nav-sut" onclick="sayfaAc('sut')">
+    <span class="nav-emoji">🥛</span>Süt
+  </button>
+  <button class="nav-btn" id="nav-peynir" onclick="sayfaAc('peynir')">
+    <span class="nav-emoji">🧀</span>Peynir
+  </button>
+  <button class="nav-btn" id="nav-tereyag" onclick="sayfaAc('tereyag')">
+    <span class="nav-emoji">🧈</span>Tereyağı
+  </button>
+  <button class="nav-btn" id="nav-grafik" onclick="sayfaAc('grafik')">
+    <span class="nav-emoji">📊</span>Grafik
+  </button>
+</div>
+
+<script>
+const FIYAT = 25;
+const bugun = new Date().toISOString().split("T")[0];
+let silHedef = null, silTip = null;
+let sutDuzenle = null, peynirDuzenle = null, tereyagDuzenle = null;
+let anaGrafik = null, ozetGrafik = null;
+let aktifGrafik = 'sut';
+
+// Tarih inputlarını bugüne ayarla
+['sut-tarih','peynir-tarih','tereyag-tarih'].forEach(id => {
+  document.getElementById(id).value = bugun;
+  document.getElementById(id).max = bugun;
+});
+
+// ==================== YARDIMCI ====================
+function yukle(anahtar) {
+  try { const v = localStorage.getItem(anahtar); return v ? JSON.parse(v) : []; } catch(e) { return []; }
+}
+function kaydet(anahtar, veri) {
+  try { localStorage.setItem(anahtar, JSON.stringify(veri)); } catch(e) {}
+}
+function bildirim(mesaj, tip) {
+  const el = document.getElementById('bildirim');
+  el.textContent = mesaj;
+  el.style.background = tip === 'hata' ? '#c0392b' : tip === 'uyari' ? '#e67e22' : '#2d6a4f';
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 2500);
+}
+function formatTarih(t) {
+  const d = new Date(t + 'T00:00:00');
+  return d.toLocaleDateString('tr-TR', {day:'2-digit', month:'long', year:'numeric'});
+}
+function sayfaAc(ad) {
+  document.querySelectorAll('.sayfa').forEach(s => s.classList.remove('aktif'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('aktif'));
+  document.getElementById('sayfa-' + ad).classList.add('aktif');
+  document.getElementById('nav-' + ad).classList.add('aktif');
+  if (ad === 'grafik') grafikCiz(aktifGrafik);
+}
+function silBasla(id, tip) { silHedef = id; silTip = tip; document.getElementById('sil-modal').classList.add('acik'); }
+function silIptal() { silHedef = null; silTip = null; document.getElementById('sil-modal').classList.remove('acik'); }
+function silOnayla() {
+  if (!silHedef || !silTip) return;
+  const anahtar = 'hacer-' + silTip;
+  let veri = yukle(anahtar).filter(k => k.id !== silHedef);
+  kaydet(anahtar, veri);
+  silIptal();
+  bildirim('Kayıt silindi.', 'uyari');
+  if (silTip === 'sut') sutGuncelle();
+  else if (silTip === 'peynir') peynirGuncelle();
+  else tereyagGuncelle();
+}
+
+// ==================== SÜT ====================
+document.getElementById('sut-litre').addEventListener('input', function() {
+  const el = document.getElementById('sut-onizleme');
+  const v = parseFloat(this.value);
+  if (v > 0) { el.style.display='block'; el.innerHTML='Tutar: <strong>'+(v*FIYAT).toLocaleString('tr-TR')+' ₺</strong>'; }
+  else el.style.display='none';
+});
+document.getElementById('sut-litre').addEventListener('keydown', e => { if(e.key==='Enter') sutKaydet(); });
+
+function sutKaydet() {
+  const tarih = document.getElementById('sut-tarih').value;
+  const litre = parseFloat(document.getElementById('sut-litre').value);
+  if (!tarih || !litre || litre <= 0) { bildirim('Lütfen tarih ve litre girin.','hata'); return; }
+  let veri = yukle('hacer-sut');
+  if (sutDuzenle !== null) {
+    veri = veri.map(k => k.id === sutDuzenle ? {...k, tarih, litre} : k);
+    sutDuzenle = null; bildirim('Kayıt güncellendi.');
+    document.getElementById('sut-form-baslik').textContent = '➕ Yeni Süt Kaydı';
+    document.getElementById('sut-kaydet-btn').textContent = 'Kaydet';
+    document.getElementById('sut-iptal-btn').style.display = 'none';
+    document.getElementById('sut-form-kart').classList.remove('duzenle-modu');
+  } else { veri.push({id: Date.now(), tarih, litre}); bildirim('Kayıt eklendi.'); }
+  kaydet('hacer-sut', veri);
+  document.getElementById('sut-litre').value = '';
+  document.getElementById('sut-tarih').value = bugun;
+  document.getElementById('sut-onizleme').style.display = 'none';
+  sutGuncelle();
+}
+function sutDuzenleBasla(id) {
+  const k = yukle('hacer-sut').find(r => r.id === id);
+  if (!k) return;
+  sutDuzenle = id;
+  document.getElementById('sut-tarih').value = k.tarih;
+  document.getElementById('sut-litre').value = k.litre;
+  document.getElementById('sut-form-baslik').textContent = '✏️ Kaydı Düzenle';
+  document.getElementById('sut-kaydet-btn').textContent = 'Güncelle';
+  document.getElementById('sut-iptal-btn').style.display = 'block';
+  document.getElementById('sut-form-kart').classList.add('duzenle-modu');
+  const el = document.getElementById('sut-onizleme');
+  el.style.display='block'; el.innerHTML='Tutar: <strong>'+(k.litre*FIYAT).toLocaleString('tr-TR')+' ₺</strong>';
+  window.scrollTo({top:0,behavior:'smooth'});
+  sutGuncelle();
+}
+function sutIptal() {
+  sutDuzenle = null;
+  document.getElementById('sut-tarih').value = bugun;
+  document.getElementById('sut-litre').value = '';
+  document.getElementById('sut-onizleme').style.display = 'none';
+  document.getElementById('sut-form-baslik').textContent = '➕ Yeni Süt Kaydı';
+  document.getElementById('sut-kaydet-btn').textContent = 'Kaydet';
+  document.getElementById('sut-iptal-btn').style.display = 'none';
+  document.getElementById('sut-form-kart').classList.remove('duzenle-modu');
+  sutGuncelle();
+}
+function sutGuncelle() {
+  const veri = yukle('hacer-sut');
+  const toplamLitre = veri.reduce((t,k) => t+k.litre, 0);
+  document.getElementById('sut-toplam-litre').textContent = toplamLitre.toLocaleString('tr-TR');
+  document.getElementById('sut-toplam-tutar').textContent = (toplamLitre*FIYAT).toLocaleString('tr-TR');
+  document.getElementById('sut-liste-baslik').textContent = '📋 Kayıtlar ('+veri.length+')';
+  const sirali = [...veri].sort((a,b) => new Date(b.tarih)-new Date(a.tarih));
+  const liste = document.getElementById('sut-liste');
+  if (!sirali.length) { liste.innerHTML='<div class="bos-mesaj">Henüz kayıt yok.</div>'; return; }
+  liste.innerHTML = sirali.map(k => `
+    <div class="kayit-satir ${sutDuzenle===k.id?'aktif':''}">
+      <div>
+        <div class="kayit-tarih">📅 ${formatTarih(k.tarih)}</div>
+        <div class="kayit-ana">${k.litre.toLocaleString('tr-TR')} lt</div>
+        <div class="kayit-alt">${(k.litre*FIYAT).toLocaleString('tr-TR')} ₺</div>
+      </div>
+      <div class="ikon-grup">
+        <button class="ikon-btn" style="background:#e8f5e9;color:#2d6a4f" onclick="sutDuzenleBasla(${k.id})">✏️</button>
+        <button class="ikon-btn" style="background:#fdecea;color:#c0392b" onclick="silBasla(${k.id},'sut')">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+// ==================== PEYNİR ====================
+function peynirKaydet() {
+  const tarih = document.getElementById('peynir-tarih').value;
+  const sut = parseFloat(document.getElementById('peynir-sut').value);
+  const kg = parseFloat(document.getElementById('peynir-kg').value);
+  if (!tarih || !sut || sut<=0 || !kg || kg<=0) { bildirim('Tüm alanları doldurun.','hata'); return; }
+  let veri = yukle('hacer-peynir');
+  if (peynirDuzenle !== null) {
+    veri = veri.map(k => k.id===peynirDuzenle ? {...k, tarih, sut, kg} : k);
+    peynirDuzenle = null; bildirim('Kayıt güncellendi.');
+    document.getElementById('peynir-form-baslik').textContent = '➕ Yeni Peynir Kaydı';
+    document.getElementById('peynir-kaydet-btn').textContent = 'Kaydet';
+    document.getElementById('peynir-iptal-btn').style.display = 'none';
+    document.getElementById('peynir-form-kart').classList.remove('duzenle-modu');
+  } else { veri.push({id:Date.now(), tarih, sut, kg}); bildirim('Kayıt eklendi.'); }
+  kaydet('hacer-peynir', veri);
+  document.getElementById('peynir-sut').value = '';
+  document.getElementById('peynir-kg').value = '';
+  document.getElementById('peynir-tarih').value = bugun;
+  peynirGuncelle();
+}
+function peynirDuzenleBasla(id) {
+  const k = yukle('hacer-peynir').find(r => r.id===id);
+  if (!k) return;
+  peynirDuzenle = id;
+  document.getElementById('peynir-tarih').value = k.tarih;
+  document.getElementById('peynir-sut').value = k.sut;
+  document.getElementById('peynir-kg').value = k.kg;
+  document.getElementById('peynir-form-baslik').textContent = '✏️ Kaydı Düzenle';
+  document.getElementById('peynir-kaydet-btn').textContent = 'Güncelle';
+  document.getElementById('peynir-iptal-btn').style.display = 'block';
+  document.getElementById('peynir-form-kart').classList.add('duzenle-modu');
+  window.scrollTo({top:0,behavior:'smooth'});
+  peynirGuncelle();
+}
+function peynirIptal() {
+  peynirDuzenle = null;
+  document.getElementById('peynir-tarih').value = bugun;
+  document.getElementById('peynir-sut').value = '';
+  document.getElementById('peynir-kg').value = '';
+  document.getElementById('peynir-form-baslik').textContent = '➕ Yeni Peynir Kaydı';
+  document.getElementById('peynir-kaydet-btn').textContent = 'Kaydet';
+  document.getElementById('peynir-iptal-btn').style.display = 'none';
+  document.getElementById('peynir-form-kart').classList.remove('duzenle-modu');
+  peynirGuncelle();
+}
+function peynirGuncelle() {
+  const veri = yukle('hacer-peynir');
+  const toplamKg = veri.reduce((t,k) => t+k.kg, 0);
+  const toplamSut = veri.reduce((t,k) => t+k.sut, 0);
+  document.getElementById('peynir-toplam-kg').textContent = toplamKg.toLocaleString('tr-TR');
+  document.getElementById('peynir-toplam-sut').textContent = toplamSut.toLocaleString('tr-TR');
+  document.getElementById('peynir-liste-baslik').textContent = '📋 Kayıtlar ('+veri.length+')';
+  const sirali = [...veri].sort((a,b) => new Date(b.tarih)-new Date(a.tarih));
+  const liste = document.getElementById('peynir-liste');
+  if (!sirali.length) { liste.innerHTML='<div class="bos-mesaj">Henüz kayıt yok.</div>'; return; }
+  liste.innerHTML = sirali.map(k => `
+    <div class="kayit-satir ${peynirDuzenle===k.id?'aktif':''}">
+      <div>
+        <div class="kayit-tarih">📅 ${formatTarih(k.tarih)}</div>
+        <div class="kayit-ana">🧀 ${k.kg.toLocaleString('tr-TR')} kg peynir</div>
+        <div class="kayit-alt">🥛 ${k.sut.toLocaleString('tr-TR')} lt süt kullanıldı</div>
+      </div>
+      <div class="ikon-grup">
+        <button class="ikon-btn" style="background:#fff8e1;color:#d4a017" onclick="peynirDuzenleBasla(${k.id})">✏️</button>
+        <button class="ikon-btn" style="background:#fdecea;color:#c0392b" onclick="silBasla(${k.id},'peynir')">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+// ==================== TEREYAĞI ====================
+function tereyagKaydet() {
+  const tarih = document.getElementById('tereyag-tarih').value;
+  const krema = parseFloat(document.getElementById('tereyag-krema').value);
+  const kg = parseFloat(document.getElementById('tereyag-kg').value);
+  if (!tarih || !krema || krema<=0 || !kg || kg<=0) { bildirim('Tüm alanları doldurun.','hata'); return; }
+  let veri = yukle('hacer-tereyag');
+  if (tereyagDuzenle !== null) {
+    veri = veri.map(k => k.id===tereyagDuzenle ? {...k, tarih, krema, kg} : k);
+    tereyagDuzenle = null; bildirim('Kayıt güncellendi.');
+    document.getElementById('tereyag-form-baslik').textContent = '➕ Yeni Tereyağı Kaydı';
+    document.getElementById('tereyag-kaydet-btn').textContent = 'Kaydet';
+    document.getElementById('tereyag-iptal-btn').style.display = 'none';
+    document.getElementById('tereyag-form-kart').classList.remove('duzenle-modu');
+  } else { veri.push({id:Date.now(), tarih, krema, kg}); bildirim('Kayıt eklendi.'); }
+  kaydet('hacer-tereyag', veri);
+  document.getElementById('tereyag-krema').value = '';
+  document.getElementById('tereyag-kg').value = '';
+  document.getElementById('tereyag-tarih').value = bugun;
+  tereyagGuncelle();
+}
+function tereyagDuzenleBasla(id) {
+  const k = yukle('hacer-tereyag').find(r => r.id===id);
+  if (!k) return;
+  tereyagDuzenle = id;
+  document.getElementById('tereyag-tarih').value = k.tarih;
+  document.getElementById('tereyag-krema').value = k.krema;
+  document.getElementById('tereyag-kg').value = k.kg;
+  document.getElementById('tereyag-form-baslik').textContent = '✏️ Kaydı Düzenle';
+  document.getElementById('tereyag-kaydet-btn').textContent = 'Güncelle';
+  document.getElementById('tereyag-iptal-btn').style.display = 'block';
+  document.getElementById('tereyag-form-kart').classList.add('duzenle-modu');
+  window.scrollTo({top:0,behavior:'smooth'});
+  tereyagGuncelle();
+}
+function tereyagIptal() {
+  tereyagDuzenle = null;
+  document.getElementById('tereyag-tarih').value = bugun;
+  document.getElementById('tereyag-krema').value = '';
+  document.getElementById('tereyag-kg').value = '';
+  document.getElementById('tereyag-form-baslik').textContent = '➕ Yeni Tereyağı Kaydı';
+  document.getElementById('tereyag-kaydet-btn').textContent = 'Kaydet';
+  document.getElementById('tereyag-iptal-btn').style.display = 'none';
+  document.getElementById('tereyag-form-kart').classList.remove('duzenle-modu');
+  tereyagGuncelle();
+}
+function tereyagGuncelle() {
+  const veri = yukle('hacer-tereyag');
+  const toplamKg = veri.reduce((t,k) => t+k.kg, 0);
+  const toplamKrema = veri.reduce((t,k) => t+k.krema, 0);
+  document.getElementById('tereyag-toplam-kg').textContent = toplamKg.toLocaleString('tr-TR');
+  document.getElementById('tereyag-toplam-krema').textContent = toplamKrema.toLocaleString('tr-TR');
+  document.getElementById('tereyag-liste-baslik').textContent = '📋 Kayıtlar ('+veri.length+')';
+  const sirali = [...veri].sort((a,b) => new Date(b.tarih)-new Date(a.tarih));
+  const liste = document.getElementById('tereyag-liste');
+  if (!sirali.length) { liste.innerHTML='<div class="bos-mesaj">Henüz kayıt yok.</div>'; return; }
+  liste.innerHTML = sirali.map(k => `
+    <div class="kayit-satir ${tereyagDuzenle===k.id?'aktif':''}">
+      <div>
+        <div class="kayit-tarih">📅 ${formatTarih(k.tarih)}</div>
+        <div class="kayit-ana">🧈 ${k.kg.toLocaleString('tr-TR')} kg tereyağı</div>
+        <div class="kayit-alt">🥛 ${k.krema.toLocaleString('tr-TR')} lt krema kullanıldı</div>
+      </div>
+      <div class="ikon-grup">
+        <button class="ikon-btn" style="background:#fff3e0;color:#c0621a" onclick="tereyagDuzenleBasla(${k.id})">✏️</button>
+        <button class="ikon-btn" style="background:#fdecea;color:#c0392b" onclick="silBasla(${k.id},'tereyag')">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+// ==================== GRAFİK ====================
+function grafik(tip) {
+  aktifGrafik = tip;
+  document.querySelectorAll('.grafik-sekme').forEach(b => b.classList.remove('aktif'));
+  event.target.classList.add('aktif');
+  grafikCiz(tip);
+}
+
+function aylikVeri(veri, alan) {
+  const aylar = {};
+  veri.forEach(k => {
+    const ay = k.tarih.substring(0,7);
+    aylar[ay] = (aylar[ay]||0) + k[alan];
+  });
+  const sirali = Object.keys(aylar).sort();
+  return {
+    etiketler: sirali.map(a => { const [y,m]=a.split('-'); return ['','Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'][parseInt(m)]+' '+y.substring(2); }),
+    degerler: sirali.map(a => Math.round(aylar[a]*10)/10)
+  };
+}
+
+function grafikCiz(tip) {
+  // Ana grafik
+  if (anaGrafik) { anaGrafik.destroy(); anaGrafik = null; }
+
+  let veri, alan, renk, baslik;
+  if (tip === 'sut') {
+    veri = yukle('hacer-sut'); alan = 'litre'; renk = '#40916c'; baslik = 'Aylık Süt Alımı (Litre)';
+  } else if (tip === 'peynir') {
+    veri = yukle('hacer-peynir'); alan = 'kg'; renk = '#d4a017'; baslik = 'Aylık Peynir Üretimi (kg)';
+  } else {
+    veri = yukle('hacer-tereyag'); alan = 'kg'; renk = '#c0621a'; baslik = 'Aylık Tereyağı Üretimi (kg)';
+  }
+
+  document.getElementById('grafik-baslik').textContent = baslik;
+  const {etiketler, degerler} = aylikVeri(veri, alan);
+
+  const ctx = document.getElementById('ana-grafik').getContext('2d');
+  anaGrafik = new Chart(ctx, {
+    type: etiketler.length > 1 ? 'line' : 'bar',
+    data: {
+      labels: etiketler.length ? etiketler : ['Veri Yok'],
+      datasets: [{
+        label: baslik,
+        data: degerler.length ? degerler : [0],
+        backgroundColor: renk+'44',
+        borderColor: renk,
+        borderWidth: 2,
+        pointBackgroundColor: renk,
+        tension: 0.3,
+        fill: true,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, grid: { color: '#f0f0f0' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+
+  // Özet pasta grafik
+  if (ozetGrafik) { ozetGrafik.destroy(); ozetGrafik = null; }
+  const sutVeri = yukle('hacer-sut');
+  const peynirVeri = yukle('hacer-peynir');
+  const tereyagVeri = yukle('hacer-tereyag');
+  const toplamSut = sutVeri.reduce((t,k)=>t+k.litre,0);
+  const toplamPeynirSut = peynirVeri.reduce((t,k)=>t+k.sut,0);
+  const toplamTereyagKrema = tereyagVeri.reduce((t,k)=>t+k.krema,0);
+  const toplamPeynirKg = peynirVeri.reduce((t,k)=>t+k.kg,0);
+  const toplamTereyagKg = tereyagVeri.reduce((t,k)=>t+k.kg,0);
+
+  const ctx2 = document.getElementById('ozet-grafik').getContext('2d');
+  ozetGrafik = new Chart(ctx2, {
+    type: 'bar',
+    data: {
+      labels: ['Süt (lt)', 'Peynir İçin Süt (lt)', 'Krema (lt)', 'Peynir (kg)', 'Tereyağı (kg)'],
+      datasets: [{
+        data: [toplamSut, toplamPeynirSut, toplamTereyagKrema, toplamPeynirKg, toplamTereyagKg],
+        backgroundColor: ['#40916c','#d4a017','#c0621a','#b8860b','#a05010'],
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, grid: { color: '#f0f0f0' } },
+        x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+      }
+    }
+  });
+}
+
+// Başlangıç
+sutGuncelle();
+peynirGuncelle();
+tereyagGuncelle();
+</script>
+</body>
+</html>
